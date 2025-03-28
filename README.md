@@ -1,9 +1,12 @@
-# Quorum Dev Quickstart
+# Quorum Dev Quickstart Modified
+
+This repository is based on the [Quorum Developer Quickstart repository](https://github.com/Consensys/quorum-dev-quickstart) and has been slightly modified to set up a functional Hyperledger Besu network while optimizing resource consumption. These changes are minimal, primarily involving the removal of some monitoring features, such as Prometheus and Grafana, to reduce computational overhead without affecting the core functionality of the network.
 
 ## Table of Contents
 
 - [Quorum Dev Quickstart](#quorum-dev-quickstart)
   - [Table of Contents](#table-of-contents)
+  - [Setup](#setup)
   - [Prerequisites](#prerequisites)
   - [Usage](#usage)
   - [Dev Network Setups](#dev-network-setups)
@@ -11,6 +14,14 @@
     - [ii. POA Network with Privacy ](#ii-poa-network-with-privacy-)
     - [iii. Smart Contracts \& DApps ](#iii-smart-contracts--dapps-)
   - [Moving to production](#moving-to-production)
+
+## Setup
+
+If you are using this repository on a completely new machine or a VM, you can run the `setup.sh` script provided in this repository. This script will install all necessary dependencies and, by default, will automatically clone this repository at the end of the setup.  
+
+If you have already cloned this repository manually, please comment out the respective line in the script to avoid duplication.  
+
+Other than the setup process, the remainder of this repository remains the same as the original Quorum Developer Quickstart.  
 
 ## Prerequisites
 
