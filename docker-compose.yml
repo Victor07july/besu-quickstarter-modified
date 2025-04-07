@@ -248,7 +248,6 @@ services:
 volumes:
   public-keys:
   ethlogger:
-  blockscoutpostgres:
 
 networks:
   quorum-dev-quickstart:
