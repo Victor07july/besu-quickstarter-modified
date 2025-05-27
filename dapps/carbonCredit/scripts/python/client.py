@@ -18,10 +18,10 @@ assert w3.is_connected(), "Erro: Não conectado ao nó Ethereum"
 w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 # === 3. Carregar ABI e bytecode do contrato ===
-with open("../contracts/CarbonCredit.json") as f:
+with open("../../contracts/CarbonCredit.json") as f:
     contract_json = json.load(f)
-    abi = contract_json['contracts']['../contracts/CarbonCredit.sol']['CarbonCreditNFT']["abi"]
-    bytecode = contract_json['contracts']['../contracts/CarbonCredit.sol']['CarbonCreditNFT']['evm']["bytecode"]['object']
+    abi = contract_json['contracts']['../../contracts/CarbonCredit.sol']['CarbonCreditNFT']["abi"]
+    bytecode = contract_json['contracts']['../../contracts/CarbonCredit.sol']['CarbonCreditNFT']['evm']["bytecode"]['object']
 
 # === 4. Criar contrato a partir do ABI e bytecode ===
 CarbonCredit = w3.eth.contract(abi=abi, bytecode=bytecode)

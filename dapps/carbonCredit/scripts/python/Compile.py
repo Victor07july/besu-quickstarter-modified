@@ -6,8 +6,8 @@ import os
 install_solc('0.8.20')
 
 # Caminho para o contrato
-solidity_file = "../contracts/CarbonCredit.sol"
-output_file = "../contracts/CarbonCredit.json"
+solidity_file = "../../contracts/CarbonCredit.sol"
+output_file = "../../contracts/CarbonCredit.json"
 
 # Ler o código do contrato
 with open(solidity_file, "r") as f:
@@ -31,12 +31,12 @@ compiled = compile_standard({
         },
     "remappings": [
         
-            "@openzeppelin/=/home/icto/besu-quickstarter-modified/dapps/carbonCredit/node_modules/@openzeppelin/"   
+            "@openzeppelin/=/home/inmetro/besu-quickstarter-modified/dapps/carbonCredit/node_modules/@openzeppelin/"   
         ]
     }
     
 }, 
-allow_paths=".,../node_modules",
+allow_paths=".,../../node_modules",
 solc_version="0.8.20")
 
 # Salvar resultado no JSON
