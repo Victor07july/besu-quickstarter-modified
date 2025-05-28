@@ -26,7 +26,7 @@ with open("../contracts/CarbonCreditV2.json") as f:
 contract = w3.eth.contract(address=contract_address, abi=abi)
 
 # Chamar função `set()` (transação)
-tx = contract.functions.registrarVeiculo(account.address, 1234, 1, 25).build_transaction({
+tx = contract.functions.registrarViagemDetalhada(account.address, 10, 10, 5).build_transaction({
     'from': account.address,
     'nonce': w3.eth.get_transaction_count(account.address),
     'gas': 100000,
@@ -36,14 +36,14 @@ tx = contract.functions.registrarVeiculo(account.address, 1234, 1, 25).build_tra
 signed_tx = w3.eth.account.sign_transaction(tx, private_key)
 #signed_tx2 = Account.sign_transaction(tx2, private_key)
 tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-print("Enviando transação para (registrarVeiculo)...")
+print("Enviando transação...")
 
 w3.eth.wait_for_transaction_receipt(tx_hash)
 
 # ======== CONSULTAR VEÍCULOS ========
 
-valor = contract.functions.getVeiculosDoCondutor(account.address).call()
-print("Novo valor armazenado:", valor)	
+# valor = contract.functions.getVeiculosDoCondutor(account.address).call()
+# print("Novo valor armazenado:", valor)	
 
 
 # # Chamar função `get()` (view)
