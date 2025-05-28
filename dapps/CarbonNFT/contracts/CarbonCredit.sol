@@ -1,153 +1,87 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract CarbonCreditNFT is ERC721, Ownable, ReentrancyGuard {
-    uint256 public carbonPricePerG; // // em wei
-    uint256 public precoCentavosPorG; // Preço desejado em centavos por g
-    uint256 public cotacaoEthEmReais; // Cotação do ETH em reais (ex: 15000 = R$15.000)
+contract CarbonCreditNFT_Final is ERC721, ReentrancyGuard {
+    // --- PARÂMETROS DE PREÇO E ADMINISTRAÇÃO ---
+    uint256 public carbonPricePerG;
+    uint256 public precoCentavosPorG;
+    uint256 public cotacaoEthEmReais;
     uint256 public nextTokenId;
+    
+    // Variável para o endereço do administrador.
+    address public admin;
 
-    enum Combustivel {
-        Gasolina,
-        Etanol,
-        Diesel,
-        Eletrico
-    }
-
-    struct ViagemData {
-        uint256 co2RealG;
+    // --- ESTRUTURA DE DADOS DETALHADA ---
+    struct ViagemDetalhada {
         uint256 co2MetaG;
+        uint256 economiaCO2;
         uint256 recompensa;
-        uint256 economia;
+        bytes32 dadosHash;
         bool recompensaSacada;
     }
 
-    struct Veiculo {
-        Combustivel combustivel;
-        uint256 fatorEmissaoGCO2PorKm; // baseado no modelo e combustível do carro, em gCO2/km
-        bool registrado;
+    mapping(uint256 => ViagemDetalhada) public viagemInfo;
+    mapping(address => uint256[]) public tokensDoCondutor;
+    
+    // --- EVENTOS ---
+    event ViagemRegistrada(uint256 indexed tokenId, address indexed condutor, uint256 co2MetaG, uint256 economiaCO2, uint256 recompensa, bytes32 dadosHash);
+    event RecompensaSacada(uint256 indexed tokenId, address indexed condutor, uint256 valor);
+    event PrecoCarbonoAtualizado(uint256 novoPrecoWei, uint256 centavos, uint256 cotacao);
+    
+    // Criei esse modificador de acesso para o administrador para evitar o uso da Ownable
+    modifier somenteAdmin() {
+        require(msg.sender == admin, "Acao restrita ao administrador");
+        _;
     }
 
-    mapping(address => mapping(uint256 => Veiculo)) public veiculos;
-    mapping(address => uint256[]) public veiculosDoCondutor;
-    mapping(uint256 => ViagemData) public viagemInfo;
-    mapping(address => uint256[]) public tokensDoCondutor;
-
-    event ViagemRegistrada(
-        uint256 tokenId,
-        address condutor,
-        uint256 co2RealG,
-        uint256 co2MetaG,
-        uint256 recompensa,
-        uint256 economia
-    );
-    event RecompensaSacada(uint256 tokenId, address condutor, uint256 valor);
-    event VeiculoRegistrado(
-        address condutor,
-        uint256 idVeiculo,
-        Combustivel combustivel,
-        uint256 fator
-    );
-    event PrecoCarbonoAtualizado(
-        uint256 novoPrecoWei,
-        uint256 centavos,
-        uint256 cotacao
-    );
-
-    constructor(
-        uint256 _centavosPorG,
-        uint256 _cotacaoInicial,
-        address initialOwner
-    ) ERC721("CarbonCreditNFT", "CO2NFT") Ownable(initialOwner) {
+    constructor(uint256 _centavosPorG, uint256 _cotacaoInicial, address initialAdmin)
+        ERC721("CarbonCreditNFT", "CO2NFT")
+    {
+        admin = initialAdmin;
+        
         precoCentavosPorG = _centavosPorG;
         cotacaoEthEmReais = _cotacaoInicial;
         _atualizarCarbonPricePerG();
     }
 
-    function registrarVeiculo(
+    function registrarViagemDetalhada(
         address _condutor,
-        uint256 idVeiculo,
-        Combustivel _combustivel,
-        uint256 _fatorGCO2PorKm
-    ) external onlyOwner {
-        require(_fatorGCO2PorKm > 0, "Fator de emissao invalido");
-
-        veiculos[_condutor][idVeiculo] = Veiculo({
-            combustivel: _combustivel,
-            fatorEmissaoGCO2PorKm: _fatorGCO2PorKm,
-            registrado: true
-        });
-        veiculosDoCondutor[_condutor].push(idVeiculo);
-
-        emit VeiculoRegistrado(
-            _condutor,
-            idVeiculo,
-            _combustivel,
-            _fatorGCO2PorKm
-        );
-    }
-
-    function registrarViagem(
-        address _condutor,
-        uint256 idVeiculo,
-        uint256 _distanciaKm,
-        uint256 _co2RealG
-    ) external onlyOwner returns (uint256) {
-        require(_distanciaKm > 0, "Distancia deve ser positiva");
-        require(_co2RealG >= 0, "CO2 real invalido");
-        require(
-            veiculos[_condutor][idVeiculo].registrado,
-            "Veiculo nao registrado"
-        );
-
-        Veiculo memory veiculo = veiculos[_condutor][idVeiculo];
-
-        uint256 co2MetaG = veiculo.fatorEmissaoGCO2PorKm * _distanciaKm;
-        uint256 economia = co2MetaG > _co2RealG ? (co2MetaG - _co2RealG) : 0;
-        uint256 recompensa = economia * carbonPricePerG;
+        uint256 _co2MetaG,
+        uint256 _economiaCO2,
+        uint256 _recompensaEmWei,
+        bytes32 _dadosHash
+    ) external somenteAdmin returns (uint256) { 
+        require(_recompensaEmWei > 0, "Recompensa deve ser positiva");
+        require(_condutor != address(0), "Condutor invalido");
 
         uint256 tokenId = nextTokenId++;
+        // O NFT é criado e atribuído diretamente ao '_condutor'
         _mint(_condutor, tokenId);
 
-        viagemInfo[tokenId] = ViagemData({
-            co2RealG: _co2RealG,
-            co2MetaG: co2MetaG,
-            recompensa: recompensa,
-            economia: economia,
+        viagemInfo[tokenId] = ViagemDetalhada({
+            co2MetaG: _co2MetaG,
+            economiaCO2: _economiaCO2,
+            recompensa: _recompensaEmWei,
+            dadosHash: _dadosHash,
             recompensaSacada: false
         });
 
         tokensDoCondutor[_condutor].push(tokenId);
-
-        emit ViagemRegistrada(
-            tokenId,
-            _condutor,
-            _co2RealG,
-            co2MetaG,
-            recompensa,
-            economia
-        );
+        emit ViagemRegistrada(tokenId, _condutor, _co2MetaG, _economiaCO2, _recompensaEmWei, _dadosHash);
         return tokenId;
     }
 
     function sacarRecompensa(uint256 tokenId) external nonReentrant {
+        // A verificação de posse do NFT garante que apenas o condutor autorizado possa sacar
         require(ownerOf(tokenId) == msg.sender, "Nao autorizado");
 
-        ViagemData storage v = viagemInfo[tokenId];
+        ViagemDetalhada storage v = viagemInfo[tokenId];
         require(!v.recompensaSacada, "Recompensa ja sacada");
-
-        if (v.recompensa == 0) {
-            revert("Sem recompensa nesta viagem");
-        }
-
-        require(
-            address(this).balance >= v.recompensa,
-            "Saldo insuficiente no contrato"
-        );
+        require(v.recompensa > 0, "Sem recompensa neste NFT");
+        require(address(this).balance >= v.recompensa, "Saldo insuficiente no contrato");
 
         v.recompensaSacada = true;
 
@@ -156,69 +90,26 @@ contract CarbonCreditNFT is ERC721, Ownable, ReentrancyGuard {
 
         emit RecompensaSacada(tokenId, msg.sender, v.recompensa);
     }
-
-    function tokensDisponiveisParaSaque(
-        address _condutor
-    ) external view returns (uint256[] memory) {
-        require(
-            msg.sender == _condutor || msg.sender == owner(),
-            "Apenas o proprio condutor ou o dono do contrato podem consultar"
-        );
-
-        uint256[] memory todos = tokensDoCondutor[_condutor];
-        uint256 count;
-        for (uint256 i = 0; i < todos.length; i++) {
-            if (
-                !viagemInfo[todos[i]].recompensaSacada &&
-                viagemInfo[todos[i]].recompensa > 0
-            ) {
-                count++;
-            }
-        }
-
-        uint256[] memory disponiveis = new uint256[](count);
-        uint256 j;
-        for (uint256 i = 0; i < todos.length; i++) {
-            if (
-                !viagemInfo[todos[i]].recompensaSacada &&
-                viagemInfo[todos[i]].recompensa > 0
-            ) {
-                disponiveis[j++] = todos[i];
-            }
-        }
-
-        return disponiveis;
-    }
-
-    function atualizarCotacaoEth(
-        uint256 novaCotacaoEmReais
-    ) external onlyOwner {
+     
+    // --- FUNÇÕES DE ADMINISTRAÇÃO PARA O PREÇO ---
+    function atualizarCotacaoEth(uint256 novaCotacaoEmReais) external somenteAdmin { 
         require(novaCotacaoEmReais > 0, "Cotacao invalida");
         cotacaoEthEmReais = novaCotacaoEmReais;
         _atualizarCarbonPricePerG();
     }
 
-    function atualizarPrecoCentavos(
-        uint256 novoPrecoCentavos
-    ) external onlyOwner {
+    function atualizarPrecoCentavos(uint256 novoPrecoCentavos) external somenteAdmin { 
         require(novoPrecoCentavos > 0, "Preco invalido");
         precoCentavosPorG = novoPrecoCentavos;
         _atualizarCarbonPricePerG();
     }
 
     function _atualizarCarbonPricePerG() internal {
-        // Convertendo centavos -> reais -> ETH -> wei
-        // (centavos * 1 ether) / (cotacao * 100)
-        carbonPricePerG =
-            (precoCentavosPorG * 1 ether) /
-            (cotacaoEthEmReais * 100);
-        emit PrecoCarbonoAtualizado(
-            carbonPricePerG,
-            precoCentavosPorG,
-            cotacaoEthEmReais
-        );
+        carbonPricePerG = (precoCentavosPorG * 1 ether) / (cotacaoEthEmReais * 100);
+        emit PrecoCarbonoAtualizado(carbonPricePerG, precoCentavosPorG, cotacaoEthEmReais);
     }
 
+    // --- FUNÇÕES AUXILIARES ---
     function saldoContrato() external view returns (uint256) {
         return address(this).balance;
     }
