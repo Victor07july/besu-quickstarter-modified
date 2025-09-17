@@ -1,0 +1,34 @@
+# Dependências
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Arquivos de build do Hardhat
+artifacts/
+cache/
+typechain/
+typechain-types/
+
+# Arquivos de ambiente (NUNCA commitar!)
+.env
+.env.local
+.env.production
+
+# Arquivos de deploy (podem conter endereços sensíveis)
+deployments-*.json
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos temporários
+*.tmp
+*.temp

@@ -3,7 +3,6 @@ from web3 import Web3
 from eth_account import Account
 from web3.middleware import ExtraDataToPOAMiddleware
 
-
 # === 1. Carregar chaves da conta e URL do nó ===
 with open("keys.json") as f:
     keys = json.load(f)

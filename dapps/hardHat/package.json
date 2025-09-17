@@ -1,0 +1,26 @@
+{
+    "name": "carbon-credit-nft",
+    "version": "1.0.0",
+    "description": "Carbon Credit NFT project for Besu network",
+    "main": "index.js",
+    "scripts": {
+        "compile": "hardhat compile",
+        "deploy": "hardhat run scripts/deploy.js --network besu",
+        "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+        "verify": "hardhat run scripts/verify.js --network besu",
+        "interact": "hardhat run scripts/interact.js --network besu",
+        "console": "hardhat run scripts/console.js --network besu",
+        "console:hardhat": "hardhat console --network besu",
+        "test": "hardhat test",
+        "node": "hardhat node"
+    },
+    "devDependencies": {
+        "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+        "hardhat": "^2.17.0",
+        "dotenv": "^16.0.0",
+        "@openzeppelin/contracts": "^4.9.0"
+    },
+    "dependencies": {
+        "@openzeppelin/contracts": "^4.9.0"
+    }
+}
