@@ -4,15 +4,15 @@ pragma solidity ^0.8.19;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract CarbonCreditNFT_Final is ERC721, ReentrancyGuard {
+contract CarbonCreditNFT_V1 is ERC721, ReentrancyGuard {
     // --- PARÂMETROS DE PREÇO E ADMINISTRAÇÃO ---
     uint256 public carbonPricePerG;
     uint256 public precoCentavosPorG;
     uint256 public cotacaoEthEmReais;
     uint256 public nextTokenId;
     
-    // Variável para o endereço do administrador.
     address public admin;
+
 
     // --- ESTRUTURA DE DADOS DETALHADA ---
     struct ViagemDetalhada {
@@ -30,35 +30,41 @@ contract CarbonCreditNFT_Final is ERC721, ReentrancyGuard {
     event ViagemRegistrada(uint256 indexed tokenId, address indexed condutor, uint256 co2MetaG, uint256 economiaCO2, uint256 recompensa, bytes32 dadosHash);
     event RecompensaSacada(uint256 indexed tokenId, address indexed condutor, uint256 valor);
     event PrecoCarbonoAtualizado(uint256 novoPrecoWei, uint256 centavos, uint256 cotacao);
+    event AdminTransferido(address indexed antigoAdmin, address indexed novoAdmin);
     
-    // Criei esse modificador de acesso para o administrador para evitar o uso da Ownable
     modifier somenteAdmin() {
         require(msg.sender == admin, "Acao restrita ao administrador");
         _;
     }
 
-    constructor(uint256 _centavosPorG, uint256 _cotacaoInicial, address initialAdmin)
+    constructor(uint256 _centavosPorG, uint256 _cotacaoInicial)
+        payable
         ERC721("CarbonCreditNFT", "CO2NFT")
     {
-        admin = initialAdmin;
-        
+        admin = msg.sender; 
+    
         precoCentavosPorG = _centavosPorG;
         cotacaoEthEmReais = _cotacaoInicial;
         _atualizarCarbonPricePerG();
+    }
+
+    function transferirAdmin(address novoAdmin) external somenteAdmin {
+        require(novoAdmin != address(0), "Novo admin nao pode ser o endereco zero");
+        emit AdminTransferido(admin, novoAdmin);
+        admin = novoAdmin;
     }
 
     function registrarViagemDetalhada(
         address _condutor,
         uint256 _co2MetaG,
         uint256 _economiaCO2,
-        uint256 _recompensaEmWei,
+        uint256 _   ,
         bytes32 _dadosHash
     ) external somenteAdmin returns (uint256) { 
         require(_recompensaEmWei > 0, "Recompensa deve ser positiva");
         require(_condutor != address(0), "Condutor invalido");
 
         uint256 tokenId = nextTokenId++;
-        // O NFT é criado e atribuído diretamente ao '_condutor'
         _mint(_condutor, tokenId);
 
         viagemInfo[tokenId] = ViagemDetalhada({
@@ -75,7 +81,6 @@ contract CarbonCreditNFT_Final is ERC721, ReentrancyGuard {
     }
 
     function sacarRecompensa(uint256 tokenId) external nonReentrant {
-        // A verificação de posse do NFT garante que apenas o condutor autorizado possa sacar
         require(ownerOf(tokenId) == msg.sender, "Nao autorizado");
 
         ViagemDetalhada storage v = viagemInfo[tokenId];
@@ -91,7 +96,6 @@ contract CarbonCreditNFT_Final is ERC721, ReentrancyGuard {
         emit RecompensaSacada(tokenId, msg.sender, v.recompensa);
     }
      
-    // --- FUNÇÕES DE ADMINISTRAÇÃO PARA O PREÇO ---
     function atualizarCotacaoEth(uint256 novaCotacaoEmReais) external somenteAdmin { 
         require(novaCotacaoEmReais > 0, "Cotacao invalida");
         cotacaoEthEmReais = novaCotacaoEmReais;
@@ -105,11 +109,14 @@ contract CarbonCreditNFT_Final is ERC721, ReentrancyGuard {
     }
 
     function _atualizarCarbonPricePerG() internal {
-        carbonPricePerG = (precoCentavosPorG * 1 ether) / (cotacaoEthEmReais * 100);
+        if (cotacaoEthEmReais == 0) { // Evita divisão por zero se a cotação não for definida
+             carbonPricePerG = 0;
+        } else {
+             carbonPricePerG = (precoCentavosPorG * 1 ether) / (cotacaoEthEmReais * 100);
+        }
         emit PrecoCarbonoAtualizado(carbonPricePerG, precoCentavosPorG, cotacaoEthEmReais);
     }
 
-    // --- FUNÇÕES AUXILIARES ---
     function saldoContrato() external view returns (uint256) {
         return address(this).balance;
     }
