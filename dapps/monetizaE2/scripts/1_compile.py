@@ -3,12 +3,12 @@ import json
 import os
 
 # Instala o compilador solc 0.8.19, se ainda não estiver instalado
-solc = "0.8.20"
+solc = "0.8.19"
 install_solc(solc)
 
 # Caminho para o contrato
-solidity_file = "../contracts/CarbonCreditNFT_e2.sol"
-output_file = "../contracts/CarbonCreditNFT_e2.json"
+solidity_file = "../contracts/CarbonCreditNFT_E2.sol"
+output_file = "../contracts/CarbonCreditNFT_E2.json"
 
 # Ler o código do contrato
 with open(solidity_file, "r") as f:
@@ -21,6 +21,15 @@ node_modules_path = os.path.join(project_dir, "node_modules")
 
 print(f"Diretório do projeto: {project_dir}")
 print(f"Caminho node_modules: {node_modules_path}")
+
+# Verificar se OpenZeppelin existe
+openzeppelin_path = os.path.join(node_modules_path, "@openzeppelin", "contracts")
+if not os.path.exists(openzeppelin_path):
+    print(f"❌ ERRO: OpenZeppelin não encontrado em {openzeppelin_path}")
+    print("Execute: npm install @openzeppelin/contracts@4.9.6")
+    exit(1)
+
+print(f"✅ OpenZeppelin encontrado em: {openzeppelin_path}")
 
 # Compilar
 compiled = compile_standard({
@@ -37,11 +46,11 @@ compiled = compile_standard({
             }
         },
         "remappings": [
-            f"@openzeppelin/={node_modules_path}/@openzeppelin/"
+            f"@openzeppelin/contracts/={openzeppelin_path}/"
         ]
     }
 }, 
-allow_paths=f".,{node_modules_path}",
+allow_paths=[project_dir, node_modules_path, openzeppelin_path],
 solc_version=solc)
 
 # Salvar resultado no JSON

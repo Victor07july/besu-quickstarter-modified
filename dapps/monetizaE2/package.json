@@ -1,7 +1,7 @@
 {
   "type": "module",
   "dependencies": {
-    "@openzeppelin/contracts": "^5.4.0",
+    "@openzeppelin/contracts": "^4.9.6",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {
