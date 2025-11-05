@@ -1,3 +1,33 @@
-smart_contracts/node_modules
+# Node modules
+**/node_modules/
+node_modules/
 
-dapps/quorumToken/node_modules
+# Python virtual environments
+**/myenv/
+myenv/
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Compiled contracts
+**/artifacts/
+**/cache/
+
+# Environment files
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
