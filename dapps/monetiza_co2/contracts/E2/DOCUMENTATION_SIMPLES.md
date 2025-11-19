@@ -2,7 +2,7 @@
 
 ## 📌 O que é este contrato?
 
-Um contrato que calcula o valor **E2** (custo de combustível em reais) baseado em dados de viagem e cria um NFT com esse valor.
+Um contrato que calcula o valor **E2** (custo de combustível em reais) baseado em dados de viagem e cria um NFT com esse valor. O contrato também possui um **marketplace integrado** onde os NFTs podem ser comprados e vendidos usando **ETH** (Ethereum).
 
 ---
 
@@ -74,7 +74,169 @@ Qualquer pessoa (é grátis, só consulta).
 
 ---
 
-### 5. setAuthorized
+## 💰 MARKETPLACE - Compra e Venda de NFTs
+
+### 5. setBrlPerEth
+
+**O que faz:**  
+Ajusta a taxa de conversão BRL/ETH (quantos reais vale 1 ETH).
+
+**Recebe:**
+- `newRate`: Nova taxa em BRL multiplicado por 1000000 (ex: 15.000 BRL = 15000000000)
+
+**Retorna:**  
+Nada.
+
+**Quem pode usar:**  
+Apenas o dono do contrato.
+
+---
+
+### 6. convertBRLtoETH
+
+**O que faz:**  
+Converte um valor em BRL para ETH usando a taxa atual.
+
+**Recebe:**
+- `brlAmount`: Valor em BRL multiplicado por 1000000
+
+**Retorna:**
+- Valor equivalente em wei (1 ETH = 10^18 wei)
+
+**Quem pode usar:**  
+Qualquer pessoa (é grátis, só consulta).
+
+---
+
+### 7. listToken
+
+**O que faz:**  
+Coloca seu NFT à venda no marketplace por um preço em BRL.
+
+**Recebe:**
+- `tokenId`: Número do NFT
+- `priceBRL`: Preço desejado em BRL multiplicado por 1000000
+
+**Retorna:**  
+Nada.
+
+**Quem pode usar:**  
+Apenas o dono do NFT.
+
+---
+
+### 8. delistToken
+
+**O que faz:**  
+Remove seu NFT da venda.
+
+**Recebe:**
+- `tokenId`: Número do NFT
+
+**Retorna:**  
+Nada.
+
+**Quem pode usar:**  
+Apenas o dono do NFT que está listado.
+
+---
+
+### 9. buyToken
+
+**O que faz:**  
+Compra um NFT que está à venda, pagando em ETH. O ETH é transferido automaticamente do comprador para o vendedor.
+
+**Recebe:**
+- `tokenId`: Número do NFT
+
+**Recebe também (via transação):**
+- `msg.value`: Quantidade de ETH enviada (deve ser >= preço do NFT)
+
+**Retorna:**  
+Nada.
+
+**Quem pode usar:**  
+Qualquer pessoa (exceto o próprio dono do NFT).
+
+**Observações:**
+- Reembolsa automaticamente se você enviar ETH a mais
+- Remove o NFT da venda após compra
+- Transfere o NFT para o comprador
+
+---
+
+### 10. getAllTokensWithPrices
+
+**O que faz:**  
+Lista TODOS os NFTs existentes com seus valores E2, preços (BRL e ETH), donos e status de venda.
+
+**Recebe:**  
+Nada.
+
+**Retorna:**
+- `tokenIds`: Array com números dos NFTs
+- `e2Values`: Array com valores E2 de cada NFT
+- `pricesBRL`: Array com preços em BRL (0 se não está à venda)
+- `pricesETH`: Array com preços em ETH (0 se não está à venda)
+- `owners`: Array com endereços dos donos
+- `listed`: Array com true/false indicando se está à venda
+
+**Quem pode usar:**  
+Qualquer pessoa (é grátis, só consulta).
+
+---
+
+### 11. isListed
+
+**O que faz:**  
+Verifica se um NFT está à venda.
+
+**Recebe:**
+- `tokenId`: Número do NFT
+
+**Retorna:**
+- true se está à venda, false se não
+
+**Quem pode usar:**  
+Qualquer pessoa (é grátis, só consulta).
+
+---
+
+### 12. listingPriceBRL
+
+**O que faz:**  
+Mostra o preço de venda de um NFT em BRL.
+
+**Recebe:**
+- `tokenId`: Número do NFT
+
+**Retorna:**
+- Preço em BRL multiplicado por 1000000 (0 se não está à venda)
+
+**Quem pode usar:**  
+Qualquer pessoa (é grátis, só consulta).
+
+---
+
+### 13. brlPerEth
+
+**O que faz:**  
+Mostra a taxa de conversão atual (quantos BRL vale 1 ETH).
+
+**Recebe:**  
+Nada.
+
+**Retorna:**
+- Taxa em BRL multiplicado por 1000000
+
+**Quem pode usar:**  
+Qualquer pessoa (é grátis, só consulta).
+
+---
+
+## 🔧 FUNÇÕES ADMINISTRATIVAS
+
+### 14. setAuthorized
 
 **O que faz:**  
 Autoriza ou remove autorização de um usuário para criar NFTs.
@@ -91,7 +253,7 @@ Apenas o dono do contrato.
 
 ---
 
-### 6. nextTokenId
+### 15. nextTokenId
 
 **O que faz:**  
 Mostra qual será o número do próximo NFT.
@@ -107,7 +269,9 @@ Qualquer pessoa (é grátis, só consulta).
 
 ---
 
-### 7. authorized
+## 📋 FUNÇÕES DE CONSULTA
+
+### 16. authorized
 
 **O que faz:**  
 Verifica se um endereço está autorizado a criar NFTs.
@@ -123,7 +287,7 @@ Qualquer pessoa (é grátis, só consulta).
 
 ---
 
-### 8. tokenCalculations
+### 17. tokenCalculations
 
 **O que faz:**  
 Acessa diretamente os cálculos armazenados de um NFT.
@@ -139,7 +303,7 @@ Qualquer pessoa (é grátis, só consulta).
 
 ---
 
-### 9. owner
+### 18. owner
 
 **O que faz:**  
 Mostra quem é o dono do contrato.
@@ -155,7 +319,7 @@ Qualquer pessoa (é grátis, só consulta).
 
 ---
 
-### 10. balanceOf
+### 19. balanceOf
 
 **O que faz:**  
 Mostra quantos NFTs um endereço possui.
@@ -171,7 +335,7 @@ Qualquer pessoa (é grátis, só consulta).
 
 ---
 
-### 11. tokenOfOwnerByIndex
+### 20. tokenOfOwnerByIndex
 
 **O que faz:**  
 Pega o número de um NFT específico de um dono.
@@ -188,10 +352,12 @@ Qualquer pessoa (é grátis, só consulta).
 
 ---
 
-### 12. transferFrom
+### 21. transferFrom
 
 **O que faz:**  
-Transfere um NFT de um endereço para outro.
+~~Transfere um NFT de um endereço para outro.~~
+
+**⚠️ BLOQUEADO:** Esta função não pode mais ser usada diretamente. Para negociar NFTs, use a função `buyToken()` do marketplace.
 
 **Recebe:**
 - `from`: Endereço atual do dono
@@ -199,17 +365,19 @@ Transfere um NFT de um endereço para outro.
 - `tokenId`: Número do NFT
 
 **Retorna:**  
-Nada.
+Erro: "Use buyToken() para negociar"
 
 **Quem pode usar:**  
-O dono do NFT ou alguém que foi aprovado.
+Ninguém (função bloqueada para segurança do marketplace).
 
 ---
 
-### 13. safeTransferFrom
+### 22. safeTransferFrom
 
 **O que faz:**  
-Transfere um NFT com verificação de segurança (recomendado usar esta ao invés da transferFrom).
+~~Transfere um NFT com verificação de segurança.~~
+
+**⚠️ BLOQUEADO:** Esta função não pode mais ser usada diretamente. Para negociar NFTs, use a função `buyToken()` do marketplace.
 
 **Recebe:**
 - `from`: Endereço atual do dono
@@ -217,14 +385,14 @@ Transfere um NFT com verificação de segurança (recomendado usar esta ao invé
 - `tokenId`: Número do NFT
 
 **Retorna:**  
-Nada.
+Erro: "Use buyToken() para negociar"
 
 **Quem pode usar:**  
-O dono do NFT ou alguém que foi aprovado.
+Ninguém (função bloqueada para segurança do marketplace).
 
 ---
 
-### 14. approve
+### 23. approve
 
 **O que faz:**  
 Aprova outro endereço para poder transferir um NFT específico seu.
@@ -241,7 +409,7 @@ Apenas o dono do NFT.
 
 ---
 
-### 15. setApprovalForAll
+### 24. setApprovalForAll
 
 **O que faz:**  
 Aprova ou remove aprovação de um operador para transferir TODOS os seus NFTs.
@@ -258,7 +426,7 @@ Qualquer dono de NFTs.
 
 ---
 
-### 16. getApproved
+### 25. getApproved
 
 **O que faz:**  
 Verifica quem está aprovado para transferir um NFT específico.
@@ -274,7 +442,7 @@ Qualquer pessoa (é grátis, só consulta).
 
 ---
 
-### 17. isApprovedForAll
+### 26. isApprovedForAll
 
 **O que faz:**  
 Verifica se um operador está aprovado para transferir todos os NFTs de um dono.
@@ -399,6 +567,63 @@ console.log("E2:", detalhes.e2Final / 1000000, "reais");
 
 ---
 
+## 💰 Como Usar o Marketplace
+
+### Passo 1: Listar NFT à venda
+
+```javascript
+// Listar por R$ 100
+const precoBRL = 100 * 1000000;
+await contrato.listToken(tokenId, precoBRL);
+console.log("NFT listado à venda!");
+```
+
+### Passo 2: Ver NFTs disponíveis
+
+```javascript
+const resultado = await contrato.getAllTokensWithPrices();
+
+for (let i = 0; i < resultado.tokenIds.length; i++) {
+    if (resultado.listed[i]) {
+        console.log("Token ID:", resultado.tokenIds[i].toString());
+        console.log("Dono:", resultado.owners[i]);
+        console.log("Preço BRL:", resultado.pricesBRL[i] / 1000000);
+        console.log("Preço ETH:", ethers.formatEther(resultado.pricesETH[i]));
+        console.log("---");
+    }
+}
+```
+
+### Passo 3: Comprar NFT com ETH
+
+```javascript
+// Verificar preço
+const priceBRL = await contrato.listingPriceBRL(tokenId);
+const priceETH = await contrato.convertBRLtoETH(priceBRL);
+
+// Comprar enviando ETH
+await contrato.buyToken(tokenId, { value: priceETH });
+console.log("NFT comprado!");
+```
+
+### Passo 4: Remover da venda
+
+```javascript
+await contrato.delistToken(tokenId);
+console.log("NFT removido da venda");
+```
+
+### Passo 5: Ajustar taxa BRL/ETH (apenas owner)
+
+```javascript
+// Definir 1 ETH = 15.000 BRL
+const taxa = 15000 * 1000000;
+await contrato.setBrlPerEth(taxa);
+console.log("Taxa atualizada!");
+```
+
+---
+
 ## ⚠️ Observações
 
 1. **Autorização**: Você precisa ser autorizado pelo dono do contrato antes de criar NFTs
@@ -406,6 +631,10 @@ console.log("E2:", detalhes.e2Final / 1000000, "reais");
 3. **Valores zero**: Eficiências e preços não podem ser zero
 4. **Percentuais**: A soma de cauteloso + normal + agressivo deve ser 100%
 5. **Gas**: Criar NFT custa gas, simular é grátis
+6. **Transferências bloqueadas**: Não é possível transferir NFTs diretamente. Use o marketplace (`buyToken()`) para negociar
+7. **Preços em ETH**: O preço de venda é definido em BRL mas a compra é feita em ETH (conversão automática)
+8. **Taxa de conversão**: O owner do contrato controla a taxa BRL/ETH usada nas transações
+9. **Reembolso automático**: Se você enviar mais ETH que o necessário, o excesso é devolvido automaticamente
 
 ---
 
@@ -416,15 +645,31 @@ console.log("E2:", detalhes.e2Final / 1000000, "reais");
 2. Chame `calculateE2AndTokenize`
 3. Receba o tokenId e e2Value
 
+**Para vender NFT:**
+1. Chame `listToken(tokenId, precoBRL)`
+2. Aguarde comprador
+3. Receba ETH automaticamente na compra
+
+**Para comprar NFT:**
+1. Veja NFTs disponíveis com `getAllTokensWithPrices()`
+2. Chame `buyToken(tokenId)` enviando ETH suficiente
+3. Receba o NFT automaticamente
+
 **Para apenas consultar:**
 - `simulateE2Calculation`: Testa cálculo
 - `getCalculationDetails`: Ver dados de um NFT
+- `getAllTokensWithPrices`: Ver todos NFTs e preços
 - `balanceOf`: Ver quantos NFTs alguém tem
+- `isListed`: Verificar se NFT está à venda
 
 **Para administrar:**
 - `setAuthorized`: Autorizar usuários (só o dono)
+- `setBrlPerEth`: Ajustar taxa de conversão (só o dono)
 
 ---
 
-**Versão Simplificada**  
-**Última atualização:** Outubro 2025
+**Versão Simplificada com Marketplace**  
+**Última atualização:** Novembro 2025
+
+
+<!--Ultimas alteração: lista de tokens, transferencia de carteira por carteira, subtraindo valor da carteira>

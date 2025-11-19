@@ -16,6 +16,12 @@ __pycache__/
 *.so
 .Python
 
+# Log files
+*.log
+logs/
+**/logs/
+*.log.*
+
 # Compiled contracts
 **/artifacts/
 **/cache/
