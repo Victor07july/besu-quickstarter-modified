@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CarbonCredit E2 - NFT Marketplace</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1>🌱 CarbonCredit E2</h1>
+            <div class="nav-links">
+                <a href="#marketplace" onclick="showSection('marketplace')">Marketplace</a>
+                <a href="#upload-csv" onclick="showSection('upload-csv')">📤 Upload CSV</a>
+                <a href="#create" onclick="showSection('create')">Criar NFT</a>
+                <a href="#my-tokens" onclick="showSection('my-tokens')">Meus Tokens</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Informações do Contrato -->
+        <div class="contract-info card" id="contract-info">
+            <h2>📊 Informações do Contrato</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">Endereço:</span>
+                    <span class="value" id="contract-address">Carregando...</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Token:</span>
+                    <span class="value" id="contract-name">Carregando...</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Total de NFTs:</span>
+                    <span class="value" id="total-supply">Carregando...</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Taxa BRL/ETH:</span>
+                    <span class="value" id="brl-per-eth">Carregando...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção Marketplace -->
+        <div id="marketplace-section" class="section">
+            <h2>🏪 Marketplace</h2>
+            <div class="filters">
+                <label>
+                    <input type="checkbox" id="filter-listed" checked> Apenas à venda
+                </label>
+                <button onclick="loadMarketplace()" class="btn btn-secondary">🔄 Atualizar</button>
+            </div>
+            <div id="tokens-grid" class="tokens-grid">
+                <p class="loading">Carregando tokens...</p>
+            </div>
+        </div>
+
+        <!-- Seção Upload CSV -->
+        <div id="upload-csv-section" class="section" style="display: none;">
+            <h2>📤 Upload CSV - Criar NFTs em Lote</h2>
+            <div class="card">
+                <div class="info-box">
+                    <h3>ℹ️ Como funciona:</h3>
+                    <ul>
+                        <li>📄 Envie um arquivo CSV com dados de viagens</li>
+                        <li>🔧 O servidor processa automaticamente cada linha</li>
+                        <li>🧮 Aplica eficiências e calcula valores E2</li>
+                        <li>🎨 Cria um NFT para cada viagem válida</li>
+                        <li>⚡ Tudo em uma única operação!</li>
+                    </ul>
+                    <p><strong>Formato esperado:</strong> VIN, model, brand, ethanol (%), highway (distance), city (distance), behavior_cautious (%), behavior_normal (%), behavior_aggressive (%)</p>
+                </div>
+                
+                <form id="upload-form">
+                    <div class="form-group">
+                        <label>Arquivo CSV</label>
+                        <input type="file" id="csv-file" accept=".csv" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Endereço do Destinatário (receberá todos os NFTs)</label>
+                        <input type="text" id="recipient-address" placeholder="0x..." required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">📤 Processar CSV e Criar NFTs</button>
+                </form>
+
+                <div id="upload-progress" class="upload-progress" style="display: none;">
+                    <h3>⏳ Processando...</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <p id="progress-text">Iniciando processamento...</p>
+                </div>
+
+                <div id="upload-results" class="upload-results" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Seção Criar NFT -->
+        <div id="create-section" class="section" style="display: none;">
+            <h2>➕ Criar Novo NFT</h2>
+            <div class="card">
+                <form id="create-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Distância Estrada (km)</label>
+                            <input type="number" step="0.01" name="highwayDistance" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Distância Cidade (km)</label>
+                            <input type="number" step="0.01" name="cityDistance" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Etanol (%)</label>
+                            <input type="number" step="0.01" name="ethanolPercent" min="0" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Eficiência Estrada Gasolina (km/L)</label>
+                            <input type="number" step="0.01" name="roadGasoline" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Eficiência Estrada Etanol (km/L)</label>
+                            <input type="number" step="0.01" name="roadEthanol" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Eficiência Cidade Gasolina (km/L)</label>
+                            <input type="number" step="0.01" name="cityGasoline" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Eficiência Cidade Etanol (km/L)</label>
+                            <input type="number" step="0.01" name="cityEthanol" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Comportamento Cauteloso (%)</label>
+                            <input type="number" step="0.01" name="behaviorCautious" min="0" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Comportamento Normal (%)</label>
+                            <input type="number" step="0.01" name="behaviorNormal" min="0" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Comportamento Agressivo (%)</label>
+                            <input type="number" step="0.01" name="behaviorAggressive" min="0" max="100" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Endereço do Destinatário</label>
+                            <input type="text" name="recipient" placeholder="0x..." required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">🎨 Criar NFT</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Seção Meus Tokens -->
+        <div id="my-tokens-section" class="section" style="display: none;">
+            <h2>🎨 Meus Tokens</h2>
+            <div class="card">
+                <div class="form-group">
+                    <label>Seu Endereço</label>
+                    <input type="text" id="my-address" placeholder="0x...">
+                    <button onclick="loadMyTokens()" class="btn btn-primary">🔍 Buscar Meus Tokens</button>
+                </div>
+            </div>
+            <div id="my-tokens-grid" class="tokens-grid">
+                <p class="info-message">Digite seu endereço para ver seus tokens</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes do Token -->
+    <div id="token-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Token #<span id="modal-token-id"></span></h2>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

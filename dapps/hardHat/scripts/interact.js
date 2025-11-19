@@ -11,7 +11,7 @@ async function main() {
         const deployData = fs.readFileSync(`./deployments-${hre.network.name}.json`, 'utf8');
         deployInfo = JSON.parse(deployData);
     } catch (error) {
-        console.log("❌ Arquivo de deploy não encontrado. Certifique-se de ter feito o deploy primeiro.");
+        console.log("Arquivo de deploy não encontrado. Certifique-se de ter feito o deploy primeiro.");
         return;
     }
 
