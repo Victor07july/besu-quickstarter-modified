@@ -81,20 +81,17 @@ contract CarbonCreditNFT_E2Calculator is
     event TokenListed(
         uint256 indexed tokenId,
         address indexed seller,
-        uint256 priceInBRL,
-        uint256 priceInETH
+        uint256 priceInBRL
     );
-
-    event TokenSold(
-        uint256 indexed tokenId,
-        address indexed seller,
-        address indexed buyer,
-        uint256 priceInETH
-    );
-
-    event ConversionRateUpdated(uint256 newRate);
 
     event TokenDelisted(uint256 indexed tokenId);
+
+    event TokenTransferred(
+        uint256 indexed tokenId,
+        address indexed from,
+        address indexed to,
+        uint256 priceBRL
+    );
 
     // === ESTADO DO CONTRATO ===
     uint256 private _nextTokenId = 1;
@@ -102,10 +99,8 @@ contract CarbonCreditNFT_E2Calculator is
     mapping(address => bool) public authorized;
 
     // === MARKETPLACE STATE ===
-    uint256 public brlPerEth = 15000 * 1e6; // 1 ETH = 15.000 BRL (ajustável)
     mapping(uint256 => bool) public isListed; // Token está à venda?
     mapping(uint256 => uint256) public listingPriceBRL; // Preço em BRL * 1e6
-    bool private _internalTransfer; // Flag para permitir transferência apenas via compra
 
     // === MODIFICADORES ===
     modifier onlyAuthorized() {
@@ -153,6 +148,10 @@ contract CarbonCreditNFT_E2Calculator is
         tokenCalculations[tokenId] = result;
         e2Value = result.e2Final;
 
+        // Listar automaticamente para venda com preço = E2 (em BRL)
+        isListed[tokenId] = true;
+        listingPriceBRL[tokenId] = e2Value;
+
         // PARTE 3: Emitir eventos para tracking
         emit E2Calculated(
             recipient,
@@ -168,6 +167,9 @@ contract CarbonCreditNFT_E2Calculator is
             result.propBonus,
             result.tanqueGasoline
         );
+
+        // Emitir evento de listagem
+        emit TokenListed(tokenId, recipient, e2Value);
 
         return (tokenId, e2Value);
     }
@@ -213,29 +215,32 @@ contract CarbonCreditNFT_E2Calculator is
         result.dfEstrada = result.dtEstradaGasolina + result.dtEstradaEtanol;
 
         // Passo 4: Valores Cidade (R$)
-        // valores_cidade = ((convert_gasoline/city_gasoline) + (convert_etanol/city_ethanol)) * city_distance
+        // valores_cidade = ((convert_gasoline/city_gasoline) + (convert_etanol/city_ethanol)) * highway_distance
+        // IMPORTANTE: No Python original, Valores_cidade TAMBÉM multiplica por highway_distance!
         if (params.cityGasoline > 0) {
             result.dtCidadeGasolina =
-                (convertGasoline * params.cityDistance) /
+                (convertGasoline * params.highwayDistance) /
                 params.cityGasoline;
         }
         if (params.cityEthanol > 0) {
             result.dtCidadeEtanol =
-                (convertEtanol * params.cityDistance) /
+                (convertEtanol * params.highwayDistance) /
                 params.cityEthanol;
         }
         result.dfCidade = result.dtCidadeGasolina + result.dtCidadeEtanol;
 
         // Passo 5: Prop_Bonus (bônus de comportamento)
         // prop_bonus = (cautious/100)*0.05 + (normal/100)*0.02 + (aggressive/100)*0.005
-        // Simplificando: cautious*0.0005 + normal*0.0002 + aggressive*0.000005
+        // Como params já estão em *1e6, precisamos calcular:
+        // (x * 1e6 / 100) * 0.05 = (x * 1e6 * 0.05) / 100 = (x * 50000) / 100
+        // Mas queremos resultado em escala 1e6, então: (x * 50000) / (100 * 1e6) * 1e6 = (x * 50000) / 100
         result.propBonus =
             (params.behaviorCautious * 50000) /
-            1e6 + // 0.05 = 50000/1e6
+            (100 * 1e6) + // (x*1e6/100) * 0.05 = x * 50000 / (100 * 1e6)
             (params.behaviorNormal * 20000) /
-            1e6 + // 0.02 = 20000/1e6
+            (100 * 1e6) + // (x*1e6/100) * 0.02 = x * 20000 / (100 * 1e6)
             (params.behaviorAggressive * 5000) /
-            1e6; // 0.005 = 5000/1e6
+            (100 * 1e6); // (x*1e6/100) * 0.005 = x * 5000 / (100 * 1e6)
 
         // Passo 6: E2 Final (R$)
         // e2 = prop_bonus * (valores_estrada + valores_cidade)
@@ -276,18 +281,6 @@ contract CarbonCreditNFT_E2Calculator is
         return results;
     }
 
-    // === MARKETPLACE: CONVERSÃO BRL/ETH ===
-    function setBrlPerEth(uint256 newRate) external onlyOwner {
-        require(newRate > 0, "Taxa deve ser > 0");
-        brlPerEth = newRate;
-        emit ConversionRateUpdated(newRate);
-    }
-
-    function convertBRLtoETH(uint256 brlAmount) public view returns (uint256) {
-        // brlAmount em escala 1e6, retorna wei (1e18)
-        return (brlAmount * 1e18) / brlPerEth;
-    }
-
     // === MARKETPLACE: LISTAR TOKEN À VENDA ===
     function listToken(uint256 tokenId, uint256 priceBRL) external {
         require(_ownerOf(tokenId) == msg.sender, "Nao e o dono");
@@ -296,8 +289,7 @@ contract CarbonCreditNFT_E2Calculator is
         isListed[tokenId] = true;
         listingPriceBRL[tokenId] = priceBRL;
 
-        uint256 priceETH = convertBRLtoETH(priceBRL);
-        emit TokenListed(tokenId, msg.sender, priceBRL, priceETH);
+        emit TokenListed(tokenId, msg.sender, priceBRL);
     }
 
     // === MARKETPLACE: REMOVER DA VENDA ===
@@ -311,41 +303,25 @@ contract CarbonCreditNFT_E2Calculator is
         emit TokenDelisted(tokenId);
     }
 
-    // === MARKETPLACE: COMPRAR TOKEN COM ETH ===
-    function buyToken(uint256 tokenId) external payable nonReentrant {
+    // === MARKETPLACE: TRANSFERIR NFT APÓS PAGAMENTO OFF-CHAIN ===
+    function transferNFT(uint256 tokenId, address buyer) external nonReentrant {
         require(isListed[tokenId], "Token nao esta a venda");
 
         address seller = _ownerOf(tokenId);
-        require(seller != address(0), "Token nao existe");
-        require(msg.sender != seller, "Nao pode comprar seu proprio token");
+        require(seller == msg.sender, "Apenas o dono pode transferir");
+        require(buyer != address(0), "Comprador invalido");
+        require(buyer != seller, "Nao pode transferir para si mesmo");
 
         uint256 priceBRL = listingPriceBRL[tokenId];
-        uint256 priceETH = convertBRLtoETH(priceBRL);
-
-        require(msg.value >= priceETH, "ETH insuficiente");
 
         // Remover da venda
         isListed[tokenId] = false;
         listingPriceBRL[tokenId] = 0;
 
-        // Transferir NFT (usando flag interna)
-        _internalTransfer = true;
-        _transfer(seller, msg.sender, tokenId);
-        _internalTransfer = false;
+        // Transferir NFT
+        _transfer(seller, buyer, tokenId);
 
-        // Transferir ETH ao vendedor
-        (bool success, ) = payable(seller).call{value: priceETH}("");
-        require(success, "Transferencia ETH falhou");
-
-        // Reembolsar excesso
-        if (msg.value > priceETH) {
-            (bool refundSuccess, ) = payable(msg.sender).call{
-                value: msg.value - priceETH
-            }("");
-            require(refundSuccess, "Reembolso falhou");
-        }
-
-        emit TokenSold(tokenId, seller, msg.sender, priceETH);
+        emit TokenTransferred(tokenId, seller, buyer, priceBRL);
     }
 
     // === MARKETPLACE: LISTAR TODOS OS TOKENS DISPONÍVEIS ===
@@ -356,7 +332,6 @@ contract CarbonCreditNFT_E2Calculator is
             uint256[] memory tokenIds,
             uint256[] memory e2Values,
             uint256[] memory pricesBRL,
-            uint256[] memory pricesETH,
             address[] memory owners,
             bool[] memory listed
         )
@@ -366,7 +341,6 @@ contract CarbonCreditNFT_E2Calculator is
         tokenIds = new uint256[](total);
         e2Values = new uint256[](total);
         pricesBRL = new uint256[](total);
-        pricesETH = new uint256[](total);
         owners = new address[](total);
         listed = new bool[](total);
 
@@ -375,14 +349,11 @@ contract CarbonCreditNFT_E2Calculator is
             tokenIds[i] = tokenId;
             e2Values[i] = tokenCalculations[tokenId].e2Final;
             pricesBRL[i] = isListed[tokenId] ? listingPriceBRL[tokenId] : 0;
-            pricesETH[i] = isListed[tokenId]
-                ? convertBRLtoETH(listingPriceBRL[tokenId])
-                : 0;
             owners[i] = _ownerOf(tokenId);
             listed[i] = isListed[tokenId];
         }
 
-        return (tokenIds, e2Values, pricesBRL, pricesETH, owners, listed);
+        return (tokenIds, e2Values, pricesBRL, owners, listed);
     }
 
     // === FUNÇÕES ADMINISTRATIVAS ===
@@ -392,26 +363,6 @@ contract CarbonCreditNFT_E2Calculator is
 
     function nextTokenId() external view returns (uint256) {
         return _nextTokenId;
-    }
-
-    // === BLOQUEIO DE TRANSFERÊNCIAS DIRETAS ===
-    function transferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) public override(ERC721, IERC721) {
-        require(_internalTransfer, "Use buyToken() para negociar");
-        super.transferFrom(from, to, tokenId);
-    }
-
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes memory data
-    ) public override(ERC721, IERC721) {
-        require(_internalTransfer, "Use buyToken() para negociar");
-        super.safeTransferFrom(from, to, tokenId, data);
     }
 
     // === FUNÇÕES REQUERIDAS PELO ERC721Enumerable ===

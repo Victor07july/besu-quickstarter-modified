@@ -7,8 +7,8 @@ solc = "0.8.19"
 install_solc(solc)
 
 # Caminho para o contrato
-solidity_file = "../contracts/E1/CarbonCreditNFT_E1.sol"
-output_file = "../contracts/E1/CarbonCreditNFT_E1.json"
+solidity_file = "../../contracts/E2/CarbonCreditNFT_E2.sol"
+output_file = "../../contracts/E2/CarbonCreditNFT_E2.json"
 
 # Ler o código do contrato
 with open(solidity_file, "r") as f:
@@ -16,7 +16,8 @@ with open(solidity_file, "r") as f:
 
 # Caminho absoluto para node_modules
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_dir = os.path.dirname(current_dir)
+scripts_dir = os.path.dirname(current_dir)  # /scripts
+project_dir = os.path.dirname(scripts_dir)  # /dapps/monetiza_co2
 node_modules_path = os.path.join(project_dir, "node_modules")
 
 print(f"Diretório do projeto: {project_dir}")
@@ -27,6 +28,7 @@ openzeppelin_path = os.path.join(node_modules_path, "@openzeppelin", "contracts"
 if not os.path.exists(openzeppelin_path):
     print(f"❌ ERRO: OpenZeppelin não encontrado em {openzeppelin_path}")
     print("Execute: npm install @openzeppelin/contracts@4.9.6")
+    print("cd /home/inmetro/besu-quickstarter-modified/dapps/monetiza_co2 && npm install @openzeppelin/contracts@4.9.6")
     exit(1)
 
 print(f"✅ OpenZeppelin encontrado em: {openzeppelin_path}")

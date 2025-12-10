@@ -26,10 +26,10 @@ w3 = Web3(Web3.HTTPProvider(rpc_url))
 assert w3.is_connected(), "Erro: Não conectado ao nó Ethereum"
 
 # === 3. Carregar ABI e bytecode do contrato ===
-with open("../contracts/E1/CarbonCreditNFT_E1.json") as f:
+with open("../../contracts/E2/CarbonCreditNFT_E2.json") as f:
     contract_json = json.load(f)
-    abi = contract_json['contracts']['../contracts/E1/CarbonCreditNFT_E1.sol']['CarbonCreditNFT_E1']["abi"]
-    bytecode = contract_json['contracts']['../contracts/E1/CarbonCreditNFT_E1.sol']['CarbonCreditNFT_E1']["evm"]["bytecode"]['object']
+    abi = contract_json['contracts']['../../contracts/E2/CarbonCreditNFT_E2.sol']['CarbonCreditNFT_E2Calculator']["abi"]
+    bytecode = contract_json['contracts']['../../contracts/E2/CarbonCreditNFT_E2.sol']['CarbonCreditNFT_E2Calculator']["evm"]["bytecode"]['object']
 
 # === 4. Criar contrato a partir do ABI e bytecode ===
 CarbonCredit = w3.eth.contract(abi=abi, bytecode=bytecode)
@@ -39,7 +39,7 @@ nonce = w3.eth.get_transaction_count(account.address)
 transaction = CarbonCredit.constructor().build_transaction({
     'from': account.address,
     'nonce': nonce,
-    'gas': 5000000,  # Increased from 2M to 5M gas
+    'gas': 8000000,  # Aumentado para 8M gas (contrato E2 é maior)
     'gasPrice': w3.eth.gas_price,
 })
 
